@@ -1,3 +1,5 @@
+import numpy as np
+
 def gaussian_elimination(coeff_matrix, rhs_vector):
     num_equations = len(rhs_vector)
 
@@ -32,11 +34,7 @@ def gaussian_elimination(coeff_matrix, rhs_vector):
 
     return solution
 
-
-
-
 def vector_norm(vector, norm_type='euclidean'):
-
     if norm_type == 'euclidean':
         # Евклидова норма (L2-норма)
         return sum(x ** 2 for x in vector) ** 0.5
@@ -50,7 +48,6 @@ def vector_norm(vector, norm_type='euclidean'):
         raise ValueError("Неизвестный тип нормы. Допустимые значения: 'euclidean', 'l1', 'linf'.")
 
 def matrix_norm(matrix, norm_type='euclidean'):
-
     if norm_type == 'euclidean':
         # Евклидова норма (Frobenius norm)
         return sum(sum(x ** 2 for x in row) for row in matrix) ** 0.5
@@ -70,17 +67,6 @@ def matrix_vector_multiply(matrix, vector):
     return [dot_product(row, vector) for row in matrix]
 
 def householder_reflection(matrix, norm_type='euclidean'):
-    """
-    Приведение матрицы к верхнетреугольному виду с использованием преобразований Хаусхолдера.
-
-    Параметры:
-    matrix : list of lists - матрица коэффициентов.
-    norm_type : str - тип нормы для вычисления ('euclidean', 'l1', 'linf').
-
-    Возвращает:
-    upper_triangular : list of lists - верхнетреугольная матрица.
-    orthogonal_transform : list of lists - ортогональная матрица преобразований.
-    """
     n = len(matrix)
     upper_triangular = [row[:] for row in matrix]  # Копируем матрицу
     orthogonal_transform = [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]  # Единичная матрица
@@ -124,7 +110,6 @@ def householder_reflection(matrix, norm_type='euclidean'):
 
     return upper_triangular, orthogonal_transform
 
-
 def solve_householder(matrix, vector, norm_type='euclidean'):
     n = len(matrix)
     # Применяем преобразование Хаусхолдера к матрице
@@ -148,9 +133,6 @@ def compute_residual(matrix, solution, rhs_vector):
     return residual
 
 def inverse_matrix_gauss_jordan(matrix):
-    """
-    Нахождение обратной матрицы методом Гаусса-Жордана.
-    """
     n = len(matrix)
     augmented_matrix = [row[:] + [1.0 if i == j else 0.0 for j in range(n)] for i, row in enumerate(matrix)]
 
@@ -184,11 +166,7 @@ def inverse_matrix_gauss_jordan(matrix):
     inverse_matrix = [row[n:] for row in augmented_matrix]
     return inverse_matrix
 
-
 def compute_condition_number(matrix, norm_type='euclidean'):
-    """
-    Оценка числа обусловленности матрицы.
-    """
     # Вычисляем норму матрицы
     matrix_norm_value = matrix_norm(matrix, norm_type)
 
@@ -201,14 +179,105 @@ def compute_condition_number(matrix, norm_type='euclidean'):
     # Число обусловленности
     return matrix_norm_value * inverse_norm_value
 
+def compute_errors(true_solution, approx_solution):
+    n = len(true_solution)
+    absolute_errors = [abs(true_solution[i] - approx_solution[i]) for i in range(n)]
+    relative_errors = [absolute_errors[i] / abs(true_solution[i]) if true_solution[i] != 0 else 0 for i in range(n)]
+
+    l1_absolute_error = sum(absolute_errors)
+    linf_absolute_error = max(absolute_errors)
+
+    l1_relative_error = sum(relative_errors)
+    linf_relative_error = max(relative_errors)
+
+    return l1_absolute_error, linf_absolute_error, l1_relative_error, linf_relative_error
+
+def run_through_algorithm(a, c, b, d):
+    n = len(c)
+    # Копируем входные данные, чтобы не изменять оригинальные массивы
+    a = a.copy()
+    c = c.copy()
+    b = b.copy()
+    d = d.copy()
+
+    # Прямой ход метода прогонки
+    for i in range(1, n):
+        factor = a[i - 1] / c[i - 1]
+        c[i] -= factor * b[i - 1]
+        d[i] -= factor * d[i - 1]
+
+    # Обратный ход метода прогонки
+    x = [0.0] * n
+    x[-1] = d[-1] / c[-1]
+    for i in range(n - 2, -1, -1):
+        x[i] = (d[i] - b[i] * x[i + 1]) / c[i]
+
+    return x
+
+def input_tridiagonal_system():
+    print("Введите данные для трехдиагональной системы:")
+    print("Введите компоненты вектора a (поддиагональ, начиная со второго элемента):")
+    a = list(map(float, input().split()))
+
+    print("Введите компоненты вектора c (диагональ):")
+    c = list(map(float, input().split()))
+
+    print("Введите компоненты вектора b (наддиагональ, без последнего элемента):")
+    b = list(map(float, input().split()))
+
+    print("Введите компоненты вектора d (правые части):")
+    d = list(map(float, input().split()))
+
+    return a, c, b, d
+
+def calculate_residual_tridiagonal(a, c, b, d, x):
+    n = len(c)
+    r = [0.0] * n
+
+    # Первая строка
+    r[0] = c[0] * x[0] + b[0] * x[1] - d[0]
+
+    # Средние строки
+    for i in range(1, n - 1):
+        r[i] = a[i - 1] * x[i - 1] + c[i] * x[i] + b[i] * x[i + 1] - d[i]
+
+    # Последняя строка
+    r[-1] = a[-1] * x[-2] + c[-1] * x[-1] - d[-1]
+
+    return r
+def run_through(a, c, b, d):
+    x_tridiagonal = run_through_algorithm(a, c, b, d)
+    print("Решение трехдиагональной системы методом прогонки:", x_tridiagonal)
+
+    # Вычисление невязки
+    residual_tridiagonal = calculate_residual_tridiagonal(a, c, b, d, x_tridiagonal)
+    print("Невязка для трехдиагональной системы:", residual_tridiagonal)
+
+    # Вычисление норм невязки
+    norm_types = ['l1', 'linf']
+    for norm_type in norm_types:
+        residual_norm = vector_norm(residual_tridiagonal, norm_type)
+        print(f"Норма невязки ({norm_type}-норма): {residual_norm}")
 
 def main():
-    print("Введите коэффициенты расширенной матрицы 4x5 построчно, разделяя числа пробелами:")
+    print("Введите коэффициенты расширенной матрицы 4x5 построчно, разделяя числа пробелами. После каждой строки добавьте точное решение через символ @:")
     augmented_matrix = []
+    true_solution = []
+
     for _ in range(4):
-        row = input().replace('@', '').split()
-        row = list(map(float, row))
-        augmented_matrix.append(row[:5])  # Берем только первые 5 столбцов
+        row = input().strip()
+        if '@' in row:
+            # Разделяем строку на часть матрицы и точное решение
+            matrix_part, true_solution_part = row.split('@')
+            matrix_part = matrix_part.split()
+            true_solution.append(float(true_solution_part.strip()))
+        else:
+            print("Ошибка: в строке отсутствует символ @.")
+            return
+
+        # Преобразуем часть строки матрицы в числа
+        row_data = list(map(float, matrix_part))
+        augmented_matrix.append(row_data[:5])  # Берем только первые 5 столбцов
 
     # Разделяем коэффициенты и правую часть
     coeff_matrix = [row[:-1] for row in augmented_matrix]
@@ -225,6 +294,24 @@ def main():
     print("Решение системы методом Хаусхолдера:")
     for i, x in enumerate(solution_householder):
         print(f"x{i + 1} = {x:.15f}")
+
+    # Вычисляем погрешности для метода Гаусса
+    l1_abs_err_gauss, linf_abs_err_gauss, l1_rel_err_gauss, linf_rel_err_gauss = compute_errors(true_solution, solution_gauss)
+    print("Погрешности метода Гаусса:")
+    print(f"L1 абсолютная погрешность: {l1_abs_err_gauss:.15f}")
+    print(f"L∞ абсолютная погрешность: {linf_abs_err_gauss:.15f}")
+    print(f"L1 относительная погрешность: {l1_rel_err_gauss:.15f}")
+    print(f"L∞ относительная погрешность: {linf_rel_err_gauss:.15f}")
+
+    # Вычисляем погрешности для метода Хаусхолдера
+    l1_abs_err_householder, linf_abs_err_householder, l1_rel_err_householder, linf_rel_err_householder = compute_errors(true_solution, solution_householder)
+    print("Погрешности метода Хаусхолдера:")
+    print(f"L1 абсолютная погрешность: {l1_abs_err_householder:.15f}")
+    print(f"L∞ абсолютная погрешность: {linf_abs_err_householder:.15f}")
+    print(f"L1 относительная погрешность: {l1_rel_err_householder:.15f}")
+    print(f"L∞ относительная погрешность: {linf_rel_err_householder:.15f}")
+
+    # Вычисляем невязки
     residual_gauss = compute_residual(coeff_matrix, solution_gauss, rhs_vector)
     residual_householder = compute_residual(coeff_matrix, solution_householder, rhs_vector)
 
@@ -241,11 +328,19 @@ def main():
             print(row)
 
         # Проверяем A * A^{-1} = E
-        identity_matrix = [[sum(coeff_matrix[i][k] * inverse_matrix[k][j] for k in range(4)) for j in range(4)] for i in
-                           range(4)]
+        identity_matrix = [[sum(coeff_matrix[i][k] * inverse_matrix[k][j] for k in range(4)) for j in range(4)] for i in range(4)]
         print("Проверка A * A^{-1} = E:")
         for row in identity_matrix:
             print(row)
+
+        atol = 1e-15  # Абсолютная погрешность
+        rtol = 1e-12  # Относительная погрешность
+
+        if np.allclose(identity_matrix, np.eye(len(coeff_matrix)), atol=atol, rtol=rtol):
+            print("Матрица A * A⁻¹ близка к единичной.")
+        else:
+            print("Матрица A * A⁻¹ не является единичной.")
+
     except ValueError as e:
         print(f"Ошибка при вычислении обратной матрицы: {e}")
 
@@ -261,6 +356,8 @@ def main():
     else:
         print("Матрица плохо обусловлена. Решение может быть неточным.")
 
+    a, c, b, d = input_tridiagonal_system()
+    run_through(a, c, b, d)
 
 if __name__ == "__main__":
     main()
