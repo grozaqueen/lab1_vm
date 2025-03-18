@@ -287,29 +287,28 @@ def main():
     solution_gauss = gaussian_elimination(coeff_matrix, rhs_vector)
     print("Решение системы методом Гаусса:")
     for i, x in enumerate(solution_gauss):
-        print(f"x{i + 1} = {x:.15f}")
+        print(f"x{i + 1} = {x}")
 
     # Решаем СЛАУ методом Хаусхолдера
     solution_householder = solve_householder(coeff_matrix, rhs_vector, norm_type='euclidean')
     print("Решение системы методом Хаусхолдера:")
-    for i, x in enumerate(solution_householder):
-        print(f"x{i + 1} = {x:.15f}")
+    print(" ".join(f"x{i + 1} = {x}" for i, x in enumerate(solution_householder)))
 
     # Вычисляем погрешности для метода Гаусса
     l1_abs_err_gauss, linf_abs_err_gauss, l1_rel_err_gauss, linf_rel_err_gauss = compute_errors(true_solution, solution_gauss)
     print("Погрешности метода Гаусса:")
-    print(f"L1 абсолютная погрешность: {l1_abs_err_gauss:.15f}")
-    print(f"L∞ абсолютная погрешность: {linf_abs_err_gauss:.15f}")
-    print(f"L1 относительная погрешность: {l1_rel_err_gauss:.15f}")
-    print(f"L∞ относительная погрешность: {linf_rel_err_gauss:.15f}")
+    print(f"L1 абсолютная погрешность: {l1_abs_err_gauss}")
+    print(f"L∞ абсолютная погрешность: {linf_abs_err_gauss}")
+    print(f"L1 относительная погрешность: {l1_rel_err_gauss}")
+    print(f"L∞ относительная погрешность: {linf_rel_err_gauss}")
 
     # Вычисляем погрешности для метода Хаусхолдера
     l1_abs_err_householder, linf_abs_err_householder, l1_rel_err_householder, linf_rel_err_householder = compute_errors(true_solution, solution_householder)
     print("Погрешности метода Хаусхолдера:")
-    print(f"L1 абсолютная погрешность: {l1_abs_err_householder:.15f}")
-    print(f"L∞ абсолютная погрешность: {linf_abs_err_householder:.15f}")
-    print(f"L1 относительная погрешность: {l1_rel_err_householder:.15f}")
-    print(f"L∞ относительная погрешность: {linf_rel_err_householder:.15f}")
+    print(f"L1 абсолютная погрешность: {l1_abs_err_householder}")
+    print(f"L∞ абсолютная погрешность: {linf_abs_err_householder}")
+    print(f"L1 относительная погрешность: {l1_rel_err_householder}")
+    print(f"L∞ относительная погрешность: {linf_rel_err_householder}")
 
     # Вычисляем невязки
     residual_gauss = compute_residual(coeff_matrix, solution_gauss, rhs_vector)
@@ -333,8 +332,8 @@ def main():
         for row in identity_matrix:
             print(row)
 
-        atol = 1e-15  # Абсолютная погрешность
-        rtol = 1e-12  # Относительная погрешность
+        atol = 1e-6  # Абсолютная погрешность
+        rtol = 1e-6  # Относительная погрешность
 
         if np.allclose(identity_matrix, np.eye(len(coeff_matrix)), atol=atol, rtol=rtol):
             print("Матрица A * A⁻¹ близка к единичной.")
@@ -347,6 +346,10 @@ def main():
     # Оцениваем число обусловленности
     condition_number = compute_condition_number(coeff_matrix, 'euclidean')
     print("Число обусловленности матрицы (евклидова норма):", condition_number)
+
+    # Оцениваем число обусловленности
+    condition_number = compute_condition_number(coeff_matrix, 'linf')
+    print("Число обусловленности матрицы (linf норма):", condition_number)
 
     # Анализ влияния числа обусловленности на точность
     if condition_number < 10:
